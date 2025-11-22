@@ -1,92 +1,71 @@
- # Experimento: Índices no MongoDB
+
+# Experimento: Índices no MongoDB
 
 Este repositório contém um experimento acadêmico que avalia o impacto da criação de índices no desempenho de consultas por intervalo de datas no MongoDB. O objetivo é comparar latências e comportamento entre cenários com e sem indexação, e apresentar análises estatísticas dos resultados.
 
-## Visão geral
+## Dependências
+- Python 3.8 ou superior  
+- MongoDB em execução  
+- Bibliotecas Python:
+  - pymongo  
+  - pandas  
+  - numpy  
+  - matplotlib  
+  - scipy  
+  - python-dotenv  
 
-O script principal realiza operações de leitura/escrita no MongoDB simulando consultas por intervalos de data. Em seguida coleta métricas de latência e salva em CSV para análise (gráficos e testes estatísticos).
+Instalação rápida das dependências:
 
-## Pré-requisitos
+```powershell
+pip install -r requirements.txt
+```
 
-- Python 3.8+ instalado
-- Uma instância do MongoDB acessível (local ou remota)
-- Permissão para criar índices na coleção usada pelo experimento
+## Configuração
+Antes de executar o experimento, configure as variáveis de ambiente no arquivo .env conforme .env.example
 
-## Instalação (Windows / PowerShell)
+## Como executar
 
-1. Criar ambiente virtual e ativar:
+1. Crie e ative um ambiente virtual:
 
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-2. Instalar dependências:
+2. Rode o script:
 
 ```powershell
-pip install -r requirements.txt
+python src\coleta_mongo_indices.py
 ```
 
-> Observação: ajuste a instalação conforme seu gerenciador de pacotes e políticas de ambiente.
+## Saídas Geradas
+Após a execução, serão criados automaticamente:
+- resultados/resultados_mongo_indices.csv
+- gráficos na pasta graphs/, como:
+    - Histogramas comparativos
+    - Boxplots comparativos
+    - ECDF (função de distribuição acumulada empírica)
 
-## Uso
+## Estrutura do CSV
 
-1. Ajuste as configurações de conexão com o MongoDB no arquivo de configuração ou diretamente no script (`coleta_mongo_indices.py`) — por exemplo, `MONGO_URI`, `DATABASE`, `COLLECTION`.
+O CSV contém uma linha por execução com, entre outros campos:
+- `tratamento`: `sem_indice` ou `com_indice`
+- `latencia_ms_server`: tempo registrado pelo servidor (executionStats)
+- `latencia_ms_client`: tempo medido no cliente (wall-clock)
+- `docs_examinados`, `chaves_examinadas`, `n_retornados`, `data_inicio`, `data_fim`
 
-2. Ative o ambiente e execute:
+Use `latencia_ms_client` para comparações que incluem rede/serialização; `latencia_ms_server` mostra custo puro no servidor.
 
-```powershell
-.\venv\Scripts\Activate.ps1
-python coleta_mongo_indices.py
-```
+## Análises Estatísticas
+O script também realiza automaticamente:
 
-3. Saída esperada:
+- Geração de gráficos comparativos
+- Teste estatístico de Mann–Whitney U para verificar diferença significativa entre os tratamentos
 
-- Um arquivo `resultados_mongo_indices.csv` com as medições de latência.
-- Possivelmente gráficos e relatórios gerados pelos scripts de análise (se houver).
+O p-value obtido indica se há evidência estatística para rejeitar a hipótese nula de igualdade entre as latências.
 
-## Scripts principais
+## Observações Importantes
 
-- `coleta_mongo_indices.py`: coleta as medições com/sem índice.
-- `analisa_resultados.py` (opcional): realiza análise estatística e plota gráficos.
-- `resultados_mongo_indices.csv`: saída gerada após execução.
-
-> Se algum desses arquivos não existir ainda, ajuste o README conforme o conteúdo atual do repositório.
-
-## Reproduzir o experimento
-
-1. Garanta um dataset com timestamps compatíveis (campo usado nas queries).
-2. Execute a coleta sem índices e salve os resultados.
-3. Crie o índice (por ex.: `db.collection.createIndex({data: 1})`).
-4. Execute a coleta com índice e salve os resultados.
-5. Compare médias, medianas e distribuições; aplique testes estatísticos para verificar significância.
-
-## Estrutura do repositório
-
-- `coleta_mongo_indices.py` — script de coleta
-- `analisa_resultados.py` — scripts de análise (se presentes)
-- `resultados_mongo_indices.csv` — arquivo de saída
-- `README.md` — este arquivo
-
-Atualize a lista acima se os nomes reais dos arquivos forem diferentes.
-
-## Como interpretar os resultados
-
-- Procure diferenças nas métricas de latência (média, mediana, percentis).
-- Verifique variação e presença de outliers.
-- Use testes como t-test ou Mann–Whitney conforme a distribuição dos dados.
-
-## Próximos passos e melhorias
-
-- Adicionar badges (build, python version)
-- Incluir exemplos de gráficos no README (imagens)
-- Automatizar geração de relatórios (notebook ou script)
-
-## Licença
-
-Coloque aqui a licença do projeto (ex.: MIT) ou remova esta seção se não for aplicável.
-
-## Contato
-
-Para dúvidas ou contribuições, abra uma issue ou entre em contato com o mantenedor.
-
+- Certifique-se de que a coleção contenha dados suficientes.
+- O script executa um warm-up inicial para estabilização de cache.
+- O índice utilizado é criado automaticamente no campo saleDate.
